@@ -138,6 +138,13 @@ config OVMS_COMP_RE_TOOLS
     help
         Enable to include support for Reverse Engineering tools
 
+config OVMS_TERRIBLE_NETWORK_MANAGER
+    bool "Include a terrible network manager"
+    default n
+    depends on OVMS
+    help
+        Enable to include a terrible network manager
+
 endmenu # Component Options
 
 menu "Developer Options"
