@@ -123,6 +123,7 @@ class simcom : public pcp, public InternalRamAllocated
     network_registration_t m_netreg;
     std::string  m_provider;
     int          m_sq;
+    int          m_cnsmod;
     GsmMux       m_mux;
     GsmPPPOS     m_ppp;
     GsmNMEA      m_nmea;
