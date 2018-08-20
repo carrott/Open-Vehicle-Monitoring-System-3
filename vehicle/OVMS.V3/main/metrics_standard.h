@@ -53,6 +53,7 @@
 #define MS_N_PROVIDER               "m.net.provider"
 #define MS_N_MDM_ICCID              "m.net.mdm.iccid"
 #define MS_N_MDM_MODEL              "m.net.mdm.model"
+#define MS_N_MDM_CPSI               "m.net.mdm.cpsi"
 
 #define MS_S_V2_CONNECTED           "s.v2.connected"
 #define MS_S_V2_PEERS               "s.v2.peers"
@@ -186,6 +187,7 @@ class MetricsStandard
     OvmsMetricString* ms_m_net_provider;            // Network provider name
     OvmsMetricString* ms_m_net_mdm_iccid;
     OvmsMetricString* ms_m_net_mdm_model;
+    OvmsMetricString* ms_m_net_mdm_cpsi;
 
     OvmsMetricBool*   ms_s_v2_connected;            // True = V2 server connected [1]
     OvmsMetricInt*    ms_s_v2_peers;                // V2 clients connected [1]

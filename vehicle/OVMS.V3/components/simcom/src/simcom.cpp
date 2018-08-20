@@ -158,7 +158,6 @@ simcom::simcom(const char* name, uart_port_t uartnum, int baud, int rxpin, int t
   m_netreg = NotRegistered;
   m_provider = "";
   m_sq = 99; // = unknown
-  m_cnsmod = 0;
   m_powermode = Off;
   m_gps_required = false;
   m_line_unfinished = -1;
@@ -600,7 +599,7 @@ simcom::SimcomState1 simcom::State1Ticker1()
       switch (m_state1_ticker)
         {
         case 10:
-          tx("AT+CPIN?;+CREG=1;+CTZU=1;+CTZR=1;+CLIP=1;+CMGF=1;+CNMI=1,2,0,0,0;+CSDH=1;+CMEE=2;+CSQ;+AUTOCSQ=1,1;+CNMP=13;E0\r\n");
+          tx("AT+CPIN?;+CREG=1;+CTZU=1;+CTZR=1;+CLIP=1;+CMGF=1;+CNMI=1,2,0,0,0;+CSDH=1;+CMEE=2;+CSQ;+AUTOCSQ=1,1;E0\r\n");
           break;
         case 12:
           tx("AT+CGMR;+ICCID\r\n");
@@ -648,7 +647,7 @@ simcom::SimcomState1 simcom::State1Ticker1()
       else if ((m_state1_ticker > 3)&&((m_netreg==RegisteredHome)||(m_netreg==RegisteredRoaming)))
         return NetStart; // We have GSM, so start the network
       if ((m_state1_ticker>3)&&((m_state1_ticker % 10) == 0))
-        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?;+CNSMOD?\r\n");
+        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?\r\n");
       break;
     case NetStart:
       if (m_powermode == Sleep)
@@ -677,13 +676,13 @@ simcom::SimcomState1 simcom::State1Ticker1()
       break;
     case NetHold:
       if ((m_state1_ticker>5)&&((m_state1_ticker % 30) == 0))
-        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?;+CNSMOD?\r\n");
+        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?\r\n");
       break;
     case NetSleep:
       if (m_powermode == On) return NetWait;
       if (m_powermode != Sleep) return PoweringOn;
       if ((m_state1_ticker>5)&&((m_state1_ticker % 30) == 0))
-        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?;+CNSMOD?\r\n");
+        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?\r\n");
       break;
     case NetMode:
       if (m_powermode == Sleep)
@@ -704,7 +703,7 @@ simcom::SimcomState1 simcom::State1Ticker1()
         return NetLoss;
         }
       if ((m_state1_ticker>5)&&((m_state1_ticker % 30) == 0))
-        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?;+CNSMOD?\r\n");
+        m_mux.tx(GSM_MUX_CHAN_POLL, "AT+CREG?;+CCLK?;+CSQ;+COPS?;+CPSI?\r\n");
       break;
     case NetDeepSleep:
       if (m_powermode != DeepSleep) return PoweringOn;
@@ -809,10 +808,10 @@ void simcom::StandardLineHandler(int channel, OvmsBuffer* buf, std::string line)
     m_sq = atoi(line.substr(6).c_str());
     UpdateNetMetrics();
     }
-  else if (line.compare(0, 6, "+CNSMOD: ") == 0)
+  else if (line.compare(0, 7, "+CPSI: ") == 0)
     {
-    m_cnsmod = atoi(line.substr(11).c_str());
-    ESP_LOGI(TAG, "CNSMOD Network System Mode: %d",m_cnsmod);
+    StandardMetrics.ms_m_net_mdm_cpsi->SetValue(line.substr(7));
+    ESP_LOGI(TAG, "CPSI: %s", line.c_str());
     }
   else if (line.compare(0, 7, "+CREG: ") == 0)
     {
@@ -1037,11 +1036,11 @@ void simcom_status(int verbosity, OvmsWriter* writer, OvmsCommand* cmd, int argc
   {
   bool debug = (strcmp(cmd->GetName(), "debug") == 0);
   
-  writer->printf("Network Registration: %s\nProvider: %s\nSignal: %d dBm\nNetwork System Mode: %d\n\nState: %s\n",
+  writer->printf("Network Registration: %s\nProvider: %s\nSignal: %d dBm\nCPSI: %s\n\nState: %s\n",
     SimcomNetRegName(MyPeripherals->m_simcom->m_netreg),
     MyPeripherals->m_simcom->m_provider.c_str(),
     UnitConvert(sq, dbm, MyPeripherals->m_simcom->m_sq),
-    MyPeripherals->m_simcom->m_cnsmod,
+    StdMetrics.ms_m_net_type->AsString(),
     SimcomState1Name(MyPeripherals->m_simcom->m_state1));
 
   if (debug)
